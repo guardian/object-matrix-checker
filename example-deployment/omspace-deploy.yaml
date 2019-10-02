@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spacemon-objectmatrix
+  labels:
+    com.theguardian.app: Multimedia
+    com.theguardian.stack: spacemon
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5 #clean up replica sets older than this
+  selector:
+    matchLabels:
+      com.theguardian.app: Multimedia
+      com.theguardian.stack: spacemon
+  template:
+    metadata:
+      labels:
+        com.theguardian.app: Multimedia
+        com.theguardian.stack: spacemon
+    spec:
+      containers:
+      - image: guardianmultimedia/object-matrix-checker:DEV
+        imagePullPolicy: Always
+        name: object-matrix-checker
+        securityContext:
+          allowPrivilegeEscalation: false
+        env:
+          - name: ELASTICSEARCH_URL
+            value: http://elasticsearch:9200
+          - name: SLEEP_TIME_MINUTES
+            value: "4"
+          - name: VAULT_INFORMATION_PATH
+            value: /etc/vaults
+        volumeMounts:
+          - name: vault-credentials
+            mountPath: /etc/vaults
+      volumes:
+        - name: vault-credentials
+          secret:
+            secretName: vault-credentials
+      restartPolicy: Always
