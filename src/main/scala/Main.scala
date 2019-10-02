@@ -4,15 +4,13 @@ import java.time.ZonedDateTime
 import com.om.mxs.client.japi.{MatrixStore, UserInfo}
 import helpers.UserInfoBuilder
 import org.slf4j.LoggerFactory
-
-import scala.concurrent.Await
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main {
   private val logger = LoggerFactory.getLogger(getClass)
   lazy val vaultSettingsDir = sys.env.getOrElse("VAULT_INFORMATION_PATH", "/etc/vaults")
-  lazy val elasticSearchUrl = sys.env.getOrElse("ELASTIC_SEARCH_URL","http://localhost:9200")
+  lazy val elasticSearchUrl = sys.env.getOrElse("ELASTICSEARCH_URL","http://localhost:9200")
   lazy val indexName = sys.env.getOrElse("INDEX_NAME", "diskspace")
   lazy val sleepTimeMins = sys.env.getOrElse("SLEEP_TIME_MINS","5").toInt
 
@@ -101,15 +99,16 @@ object Main {
 
         try {
           val vaultAttribs = vault.getAttributes
-          logger.info(s"Vault ${userInfo.getVault} on $vaultFile (${userInfo.getClusterId}): Usable space is ${ESData.reduceValue(vaultAttribs.usableSpace())} / ${ESData.reduceValue(vaultAttribs.totalSpace())}")
+          logger.info(s"Vault ${userInfo.getVault} on $vaultFile (${userInfo.getClusterId}): Usable space is ${ESData.reduceValue(vaultAttribs.usableSpace()/1000)} / ${ESData.reduceValue(vaultAttribs.totalSpace()/1000)}")
           val pct = 1.0 - (vaultAttribs.usableSpace().toDouble / vaultAttribs.totalSpace().toDouble)
 
-          Some(ESData(vaultAttribs.usableSpace(), (pct * 100).toInt, vaultAttribs.totalSpace() - vaultAttribs.usableSpace(), infoTuple._1, myHostName, ZonedDateTime.now()))
+          Some(ESData(vaultAttribs.usableSpace()/1000, (pct * 100).toInt, (vaultAttribs.totalSpace() - vaultAttribs.usableSpace())/1000, vaultFile, myHostName, ZonedDateTime.now()))
         } catch {
           case err: Throwable =>
             logger.error(s"Could not get vault attributes for $vaultFile: ", err)
             None
         } finally {
+          //ensure that we always release the vault connection
           vault.dispose()
         }
       } catch {
