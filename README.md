@@ -49,6 +49,10 @@ You can then just deploy the manifests: `kubectl apply -f .`
 
 If you want to play with the code, then it is simple enough to just clone this repository and run `sbt docker:publishLocal`
 to get your own docker image.  The only requirements are sbt and/or an integrated editor.
+
+Alternatively, you should be able to run `sbt assembly` to get a "fat jar" in the `target/scale-2.12` directory. This can be
+run from the commandline via `java -jar target/scala-2.12/ObjectMatrixChecker-assembly-DEV.jar`.
+
 There is a handy script in the `utils` directory that fires up a local Elasticsearch instance on port 9200 for development - 
 it creates a directory `esdata` to persist contents between runs. `esdata` is safe to delete whenever the instance is not running.
 Obviously this requires that you have Docker installed on your development machine.
